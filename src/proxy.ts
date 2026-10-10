@@ -16,7 +16,10 @@ export async function proxy(request: NextRequest) {
 
     return NextResponse.next();
   } catch (error) {
-    console.error("Protected route authentication failed:", error);
+    console.error(
+      "Protected route authentication failed:",
+      error
+    );
 
     const signInUrl = new URL("/signin", request.url);
 
@@ -25,5 +28,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/product/:path*"],
+  matcher: [
+    "/product/:path*",
+    "/profile",
+    "/profile/:path*",
+  ],
 };

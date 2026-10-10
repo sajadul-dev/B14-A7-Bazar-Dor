@@ -1,7 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
+
+import { auth } from "@/lib/auth";
 
 import CurrentDate from "./CurrentDate";
+import ProfileMenu from "./ProfileMenu";
 
 const API_BASE =
   "https://openapi.programming-hero.com/api/bazardor";
@@ -129,15 +133,21 @@ export default async function AuthShell({
   children,
   activePage,
 }) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
   const [categories, products] = await Promise.all([
     getApiData("/categories"),
     getApiData("/products"),
   ]);
 
+  const user = session?.user || null;
+
   return (
     <div className="flex min-h-screen flex-col bg-page text-ink">
-      {/* BRAND HEADER */}
       <header className="sticky top-0 z-50 border-b border-line bg-white">
+        {/* Brand and account navigation */}
         <div className="border-b border-gray-100">
           <div className="bazar-container flex min-h-[58px] items-center justify-between gap-3 py-2 sm:min-h-[66px]">
             <Link
@@ -167,39 +177,44 @@ export default async function AuthShell({
               </span>
             </Link>
 
-            <div className="flex shrink-0 items-center gap-2">
-              <Link
-                href="/signin"
-                aria-current={
-                  activePage === "signin" ? "page" : undefined
-                }
-                className={`rounded-lg px-2 py-2 text-[10px] font-semibold sm:px-3 sm:text-xs ${
-                  activePage === "signin"
-                    ? "text-bazar-green"
-                    : "text-ink hover:text-bazar-green"
-                }`}
-              >
-                সাইন ইন
-              </Link>
+            {/* Show profile menu when logged in */}
+            {user ? (
+              <ProfileMenu user={user} />
+            ) : (
+              <div className="flex shrink-0 items-center gap-2">
+                <Link
+                  href="/signin"
+                  aria-current={
+                    activePage === "signin" ? "page" : undefined
+                  }
+                  className={`rounded-lg px-2 py-2 text-[10px] font-semibold transition sm:px-3 sm:text-xs ${
+                    activePage === "signin"
+                      ? "text-bazar-green"
+                      : "text-ink hover:text-bazar-green"
+                  }`}
+                >
+                  সাইন ইন
+                </Link>
 
-              <Link
-                href="/signup"
-                aria-current={
-                  activePage === "signup" ? "page" : undefined
-                }
-                className={`rounded-lg px-3 py-2 text-[10px] font-bold transition sm:px-4 sm:text-xs ${
-                  activePage === "signup"
-                    ? "bg-bazar-green text-white shadow-sm"
-                    : "border border-line bg-white text-ink hover:bg-bazar-green hover:text-white"
-                }`}
-              >
-                সাইন আপ
-              </Link>
-            </div>
+                <Link
+                  href="/signup"
+                  aria-current={
+                    activePage === "signup" ? "page" : undefined
+                  }
+                  className={`rounded-lg px-3 py-2 text-[10px] font-bold transition sm:px-4 sm:text-xs ${
+                    activePage === "signup"
+                      ? "bg-bazar-green text-white shadow-sm"
+                      : "border border-line bg-white text-ink hover:bg-bazar-green hover:text-white"
+                  }`}
+                >
+                  সাইন আপ
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* CATEGORY NAVIGATION */}
+        {/* Category navigation */}
         <nav
           className="border-b border-gray-100"
           aria-label="পণ্যের ক্যাটাগরি"
@@ -213,7 +228,6 @@ export default async function AuthShell({
                   className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-[10px] font-semibold text-ink transition hover:bg-bazar-green hover:text-white sm:gap-1.5 sm:px-3 sm:text-xs"
                 >
                   <span>{category.icon || "🛒"}</span>
-
                   <span>{category.nameBn}</span>
                 </Link>
               ))}
@@ -221,18 +235,14 @@ export default async function AuthShell({
           </div>
         </nav>
 
-        {/* INFINITE PRICE TICKER */}
+        {/* Scrolling price ticker */}
         <PriceTicker products={products} />
       </header>
 
-      {/* AUTH FORM */}
       <main className="bazar-container flex flex-1 justify-center py-6 sm:py-7">
-        <div className="w-full">
-          {children}
-        </div>
+        <div className="w-full">{children}</div>
       </main>
 
-      {/* FOOTER */}
       <footer className="mt-auto border-t border-line bg-white">
         <div className="bazar-container flex flex-col justify-between gap-2 py-4 text-center text-[9px] leading-5 text-muted sm:flex-row sm:items-center sm:text-left sm:text-[10px]">
           <p>
