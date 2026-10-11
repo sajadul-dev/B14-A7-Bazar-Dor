@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 import SignOutButton from "./SignOutButton";
@@ -7,8 +9,13 @@ import SignOutButton from "./SignOutButton";
 export default function ProfilePanel({ user }) {
   const name = user?.name || "ব্যবহারকারী";
   const email = user?.email || "";
+  const image = user?.image || null;
 
   const initial = name.trim().charAt(0) || "U";
+
+  const [failedImage, setFailedImage] = useState(null);
+
+  const showImage = Boolean(image && failedImage !== image);
 
   return (
     <section className="mx-auto w-full max-w-2xl py-6 sm:py-10">
@@ -26,10 +33,24 @@ export default function ProfilePanel({ user }) {
       {/* Account Information */}
       <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-surface-alt text-xl font-extrabold text-bazar-green">
-            {initial}
+          {/* Profile Picture */}
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-alt text-xl font-extrabold text-bazar-green">
+            {showImage ? (
+              <Image
+                src={image}
+                alt={`${name} এর প্রোফাইল ছবি`}
+                width={56}
+                height={56}
+                unoptimized
+                className="h-full w-full object-cover"
+                onError={() => setFailedImage(image)}
+              />
+            ) : (
+              <span>{initial}</span>
+            )}
           </div>
 
+          {/* User Information */}
           <div className="min-w-0">
             <h2 className="break-words text-base font-bold text-ink">
               {name}
@@ -41,6 +62,7 @@ export default function ProfilePanel({ user }) {
           </div>
         </div>
 
+        {/* Sign Out */}
         <SignOutButton
           className="shrink-0 rounded-lg border border-red-300 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 sm:text-sm"
         />
