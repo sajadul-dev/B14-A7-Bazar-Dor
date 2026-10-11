@@ -63,6 +63,14 @@ export const auth = betterAuth({
     maxPasswordLength: 128,
   },
 
+  // GitHub OAuth account linking
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["github"],
+    },
+  },
+
   socialProviders: {
     ...(process.env.GOOGLE_CLIENT_ID &&
     process.env.GOOGLE_CLIENT_SECRET
