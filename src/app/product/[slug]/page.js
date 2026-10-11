@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import AccountNavigation from "../../components/AccountNavigation";
-
 import CurrentDate from "../../components/CurrentDate";
 
 const API_BASE =
@@ -26,7 +26,6 @@ async function getApiData(endpoint) {
     return Array.isArray(data) ? data : null;
   } catch (error) {
     console.error(`BazarDor API error (${endpoint}):`, error);
-
     return null;
   }
 }
@@ -284,7 +283,6 @@ function ProductHeader({ categories, products }) {
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-bazar-green hover:text-white"
               >
                 <span>{category.icon || "🛒"}</span>
-
                 <span>{category.nameBn}</span>
               </Link>
             ))}
@@ -514,7 +512,35 @@ function ProductFooter() {
    PRODUCT DETAILS PAGE
 ========================================= */
 
-export default async function ProductDetailsPage({ params }) {
+function ProductDetailsLoading() {
+  return (
+    <div className="flex min-h-screen flex-col bg-page text-ink">
+      <main className="bazar-container flex-1 py-8">
+        <div
+          className="animate-pulse space-y-5"
+          aria-label="পণ্যের তথ্য লোড হচ্ছে"
+        >
+          <div className="h-4 w-44 rounded bg-gray-200" />
+          <div className="h-40 rounded-2xl bg-white" />
+          <div className="h-36 rounded-2xl bg-white" />
+          <div className="h-52 rounded-2xl bg-white" />
+        </div>
+      </main>
+
+      <ProductFooter />
+    </div>
+  );
+}
+
+export default function ProductDetailsPage({ params }) {
+  return (
+    <Suspense fallback={<ProductDetailsLoading />}>
+      <ProductDetailsContent params={params} />
+    </Suspense>
+  );
+}
+
+async function ProductDetailsContent({ params }) {
   const { slug } = await params;
 
   const [products, categories] = await Promise.all([

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
+import { Suspense } from "react";
 
 import { auth } from "@/lib/auth";
 
@@ -9,6 +10,10 @@ import ProfileMenu from "./ProfileMenu";
 
 const API_BASE =
   "https://openapi.programming-hero.com/api/bazardor";
+
+/* =========================================
+   API DATA
+========================================= */
 
 async function getApiData(endpoint) {
   try {
@@ -29,11 +34,19 @@ async function getApiData(endpoint) {
   }
 }
 
+/* =========================================
+   BENGALI NUMBER FORMATTING
+========================================= */
+
 function bnNumber(value) {
   return new Intl.NumberFormat("bn-BD", {
     maximumFractionDigits: 1,
   }).format(Number(value) || 0);
 }
+
+/* =========================================
+   PRODUCT PRICE CHANGE
+========================================= */
 
 function getDirection(product) {
   if (product.change?.dir === "up") return "up";
@@ -66,6 +79,10 @@ function getPercentage(product) {
 
   return (Math.abs(today - yesterday) / yesterday) * 100;
 }
+
+/* =========================================
+   PRICE TICKER
+========================================= */
 
 function PriceTicker({ products }) {
   const items = products.slice(0, 12);
@@ -129,20 +146,74 @@ function PriceTicker({ products }) {
   );
 }
 
-export default async function AuthShell({
-  children,
-  activePage,
-}) {
+/* =========================================
+   GUEST ACCOUNT NAVIGATION
+========================================= */
+
+function GuestNavigation({ activePage }) {
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <Link
+        href="/signin"
+        aria-current={
+          activePage === "signin" ? "page" : undefined
+        }
+        className={`rounded-lg px-2 py-2 text-[10px] font-semibold transition sm:px-3 sm:text-xs ${
+          activePage === "signin"
+            ? "text-bazar-green"
+            : "text-ink hover:text-bazar-green"
+        }`}
+      >
+        সাইন ইন
+      </Link>
+
+      <Link
+        href="/signup"
+        aria-current={
+          activePage === "signup" ? "page" : undefined
+        }
+        className={`rounded-lg px-3 py-2 text-[10px] font-bold transition sm:px-4 sm:text-xs ${
+          activePage === "signup"
+            ? "bg-bazar-green text-white shadow-sm"
+            : "border border-line bg-white text-ink hover:bg-bazar-green hover:text-white"
+        }`}
+      >
+        সাইন আপ
+      </Link>
+    </div>
+  );
+}
+
+/* =========================================
+   DYNAMIC ACCOUNT NAVIGATION
+========================================= */
+
+async function AuthAccountNavigation({ activePage }) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
+  const user = session?.user || null;
+
+  if (user) {
+    return <ProfileMenu user={user} />;
+  }
+
+  return <GuestNavigation activePage={activePage} />;
+}
+
+/* =========================================
+   AUTH SHELL
+========================================= */
+
+export default async function AuthShell({
+  children,
+  activePage,
+}) {
   const [categories, products] = await Promise.all([
     getApiData("/categories"),
     getApiData("/products"),
   ]);
-
-  const user = session?.user || null;
 
   return (
     <div className="flex min-h-screen flex-col bg-page text-ink">
@@ -177,40 +248,12 @@ export default async function AuthShell({
               </span>
             </Link>
 
-            {/* Show profile menu when logged in */}
-            {user ? (
-              <ProfileMenu user={user} />
-            ) : (
-              <div className="flex shrink-0 items-center gap-2">
-                <Link
-                  href="/signin"
-                  aria-current={
-                    activePage === "signin" ? "page" : undefined
-                  }
-                  className={`rounded-lg px-2 py-2 text-[10px] font-semibold transition sm:px-3 sm:text-xs ${
-                    activePage === "signin"
-                      ? "text-bazar-green"
-                      : "text-ink hover:text-bazar-green"
-                  }`}
-                >
-                  সাইন ইন
-                </Link>
-
-                <Link
-                  href="/signup"
-                  aria-current={
-                    activePage === "signup" ? "page" : undefined
-                  }
-                  className={`rounded-lg px-3 py-2 text-[10px] font-bold transition sm:px-4 sm:text-xs ${
-                    activePage === "signup"
-                      ? "bg-bazar-green text-white shadow-sm"
-                      : "border border-line bg-white text-ink hover:bg-bazar-green hover:text-white"
-                  }`}
-                >
-                  সাইন আপ
-                </Link>
-              </div>
-            )}
+            {/* Dynamic session lookup stays inside Suspense */}
+            <Suspense
+              fallback={<GuestNavigation activePage={activePage} />}
+            >
+              <AuthAccountNavigation activePage={activePage} />
+            </Suspense>
           </div>
         </div>
 
