@@ -17,7 +17,10 @@ if (!authSecret) {
   );
 }
 
-/* Reuse the MongoDB client during development. */
+/**
+ * Reuse one MongoDB client within each running Node.js instance.
+ * This cache is used in development and production.
+ */
 
 const globalForMongo = globalThis as typeof globalThis & {
   mongoClient?: MongoClient;
@@ -25,17 +28,20 @@ const globalForMongo = globalThis as typeof globalThis & {
 
 const client =
   globalForMongo.mongoClient ??
-  new MongoClient(databaseUrl);
+  new MongoClient(databaseUrl, {
+    maxPoolSize: 10,
+    minPoolSize: 0,
+  });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForMongo.mongoClient = client;
-}
+globalForMongo.mongoClient = client;
 
 const db = client.db(
   process.env.DB_NAME || "bazardor"
 );
 
-/* Better Auth configuration. */
+/**
+ * Better Auth configuration
+ */
 
 export const auth = betterAuth({
   appName: "BazarDor",
@@ -57,13 +63,7 @@ export const auth = betterAuth({
     maxPasswordLength: 128,
   },
 
-  account: {
-    accountLinking: {
-      enabled: true,
-      trustedProviders: ["github"],
-    },
-  },
-socialProviders: {
+  socialProviders: {
     ...(process.env.GOOGLE_CLIENT_ID &&
     process.env.GOOGLE_CLIENT_SECRET
       ? {
